@@ -46,18 +46,21 @@ export default function TopNavbar() {
             <div className='flex items-center justify-center gap-2 flex-wrap'>
               <Link
                 href='/'
-                className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm hover:opacity-90 transition-all glass-chip chip-glow chip-theme chip-home ${
-                  isActive('/') ? 'ring-2 ring-purple-400/60' : ''
-                }`}
+                className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm hover:opacity-90 transition-all glass-chip chip-glow chip-theme chip-home ${isActive('/') ? 'ring-2 ring-purple-400/60' : ''}`}
               >
                 <Home className='h-4 w-4' />
                 <span>首页</span>
               </Link>
               <Link
+                href='/sources'
+                className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm hover:opacity-90 transition-all glass-chip chip-glow chip-theme chip-sources ${isActive('/sources') ? 'ring-2 ring-purple-400/60' : ''}`}
+              >
+                <Search className='h-4 w-4' />
+                <span>视频源</span>
+              </Link>
+              <Link
                 href='/search'
-                className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm hover:opacity-90 transition-all glass-chip chip-glow chip-theme chip-search ${
-                  isActive('/search') ? 'ring-2 ring-purple-400/60' : ''
-                }`}
+                className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm hover:opacity-90 transition-all glass-chip chip-glow chip-theme chip-search ${isActive('/search') ? 'ring-2 ring-purple-400/60' : ''}`}
               >
                 <Search className='h-4 w-4' />
                 <span>搜索</span>
