@@ -18,7 +18,8 @@ import {
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { getDoubanCategories } from '@/lib/douban.client';
-import { DoubanItem } from '@/lib/types';
+import { ApiSite, getAvailableApiSites } from '@/lib/config';
+import { DoubanItem, SearchResult } from '@/lib/types';
 
 import CapsuleSwitch from '@/components/CapsuleSwitch';
 import ContinueWatching from '@/components/ContinueWatching';
@@ -29,7 +30,7 @@ import { useSite } from '@/components/SiteProvider';
 import VideoCard from '@/components/VideoCard';
 
 function HomeClient() {
-  const [activeTab, setActiveTab] = useState<'home' | 'favorites'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'favorites' | 'cms'>('home');
   const [hotMovies, setHotMovies] = useState<DoubanItem[]>([]);
   const [hotTvShows, setHotTvShows] = useState<DoubanItem[]>([]);
   const [hotVarietyShows, setHotVarietyShows] = useState<DoubanItem[]>([]);
@@ -37,6 +38,10 @@ function HomeClient() {
     BangumiCalendarData[]
   >([]);
   const [loading, setLoading] = useState(true);
+  const [cmsSources, setCmsSources] = useState<ApiSite[]>([]);
+  const [selectedCmsSource, setSelectedCmsSource] = useState<ApiSite | null>(null);
+  const [cmsSourceVideos, setCmsSourceVideos] = useState<SearchResult[]>([]);
+  const [cmsSourceLoading, setCmsSourceLoading] = useState<boolean>(false);
   const { announcement } = useSite();
 
   const [showAnnouncement, setShowAnnouncement] = useState(false);
@@ -168,6 +173,42 @@ function HomeClient() {
     localStorage.setItem('hasSeenAnnouncement', announcement); // 记录已查看弹窗
   };
 
+  // 获取CMS源列表
+  const fetchCmsSources = async () => {
+    try {
+      const sources = await getAvailableApiSites();
+      setCmsSources(sources);
+    } catch (error) {
+      console.error('获取CMS源列表失败:', error);
+    }
+  };
+
+  // 当切换到CMS源标签页时加载CMS源数据
+  useEffect(() => {
+    if (activeTab !== 'cms') return;
+    fetchCmsSources();
+  }, [activeTab]);
+
+  // 选择CMS源并获取视频数据
+  const handleSelectCmsSource = async (source: ApiSite) => {
+    try {
+      setSelectedCmsSource(source);
+      setCmsSourceLoading(true);
+      setCmsSourceVideos([]);
+      
+      // 从CMS源获取视频数据
+      const response = await fetch(`/api/search?q=热门&source=${source.key}`);
+      if (response.ok) {
+        const data = await response.json();
+        setCmsSourceVideos(data.results || []);
+      }
+    } catch (error) {
+      console.error('获取CMS源视频数据失败:', error);
+    } finally {
+      setCmsSourceLoading(false);
+    }
+  };
+
   return (
     <PageLayout>
       {/* Hero Section */}
@@ -208,9 +249,10 @@ function HomeClient() {
             options={[
               { label: '首页', value: 'home' },
               { label: '收藏夹', value: 'favorites' },
+              { label: 'CMS源', value: 'cms' },
             ]}
             active={activeTab}
-            onChange={(value) => setActiveTab(value as 'home' | 'favorites')}
+            onChange={(value) => setActiveTab(value as 'home' | 'favorites' | 'cms')}
           />
         </div>
 
@@ -251,6 +293,81 @@ function HomeClient() {
                   </div>
                 )}
               </div>
+            </section>
+          ) : activeTab === 'cms' ? (
+            // CMS源视图
+            <section className='mb-8'>
+              <div className='mb-4 flex items-center justify-between'>
+                <h2 className='text-xl font-bold text-gray-800 dark:text-gray-200'>
+                  CMS源
+                </h2>
+              </div>
+              
+              {/* CMS源列表 */}
+              <div className='mb-8'>
+                <h3 className='text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200'>选择CMS源</h3>
+                <ScrollableRow>
+                  {cmsSources.map((source) => (
+                    <button
+                      key={source.key}
+                      className={`px-4 py-2 mx-1 rounded-full transition-all duration-300 ${selectedCmsSource?.key === source.key 
+                        ? 'bg-blue-500 text-white font-medium' 
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'}`}
+                      onClick={() => handleSelectCmsSource(source)}
+                    >
+                      {source.name}
+                    </button>
+                  ))}
+                </ScrollableRow>
+              </div>
+              
+              {/* 选中的CMS源视频列表 */}
+              {selectedCmsSource && (
+                <div>
+                  <h3 className='text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200'>
+                    {selectedCmsSource.name} - 热门视频
+                  </h3>
+                  
+                  {cmsSourceLoading ? (
+                    // 加载状态
+                    <div className='grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'>
+                      {Array.from({ length: 8 }).map((_, index) => (
+                        <div key={index} className='w-full'>
+                          <div className='relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-gray-200 animate-pulse dark:bg-gray-800'>
+                            <div className='absolute inset-0 bg-gray-300 dark:bg-gray-700'></div>
+                          </div>
+                          <div className='mt-2 h-4 bg-gray-200 rounded animate-pulse dark:bg-gray-800'></div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : cmsSourceVideos.length > 0 ? (
+                    // 视频列表
+                    <div className='justify-start grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'>
+                      {cmsSourceVideos.map((video) => (
+                        <div key={video.source + video.id} className='w-full'>
+                          <VideoCard
+                            query={video.title}
+                            id={video.id}
+                            source={video.source}
+                            title={video.title}
+                            year={video.year}
+                            poster={video.poster}
+                            episodes={video.episodes.length}
+                            source_name={video.source_name}
+                            from='search'
+                            type={video.episodes.length > 1 ? 'tv' : 'movie'}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    // 无数据
+                    <div className='text-center text-gray-500 py-8 dark:text-gray-400'>
+                      暂无视频数据
+                    </div>
+                  )}
+                </div>
+              )}
             </section>
           ) : (
             // 首页视图
