@@ -10,6 +10,7 @@ import {
   BangumiCalendarData,
   GetBangumiCalendarData,
 } from '@/lib/bangumi.client';
+import { ApiSite, getAvailableApiSites } from '@/lib/config';
 // 客户端收藏 API
 import {
   clearAllFavorites,
@@ -18,7 +19,6 @@ import {
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { getDoubanCategories } from '@/lib/douban.client';
-import { ApiSite, getAvailableApiSites } from '@/lib/config';
 import { DoubanItem, SearchResult } from '@/lib/types';
 
 import CapsuleSwitch from '@/components/CapsuleSwitch';
@@ -173,21 +173,20 @@ function HomeClient() {
     localStorage.setItem('hasSeenAnnouncement', announcement); // 记录已查看弹窗
   };
 
-  // 获取CMS源列表
+  // 获取视频源列表
   const fetchCmsSources = async () => {
     try {
       const sources = await getAvailableApiSites();
       setCmsSources(sources);
     } catch (error) {
-      console.error('获取CMS源列表失败:', error);
+      console.error('获取视频源列表失败:', error);
     }
   };
 
   // 加载视频源列表
   useEffect(() => {
-    if (activeTab !== 'home') return;
     fetchCmsSources();
-  }, [activeTab]);
+  }, []);
 
   // 选择CMS源并获取视频数据
   const handleSelectCmsSource = async (source: ApiSite) => {
