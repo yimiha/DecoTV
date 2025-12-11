@@ -52,30 +52,30 @@ export default function SourcesPage() {
         const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&source=${selectedSource.key}`);
         
         if (response.ok) {
-          const data = await response.json();
-          const videos = data.results || [];
-          setVideoList(videos);
-          
-          // 从视频数据中提取唯一的影视类型
-          if (videos.length > 0) {
-            // 提取所有class值
-            const classValues = videos
-              .filter(video => video.class)
-              .map(video => video.class!)
-              .filter((value, index, self) => self.indexOf(value) === index);
+            const data = await response.json();
+            const videos = data.results || [];
+            setVideoList(videos);
             
-            // 构建类型列表（包含热门 + 所有唯一class值）
-            const types = [
-              { key: '热门', label: '热门' },
-              ...classValues.map(classValue => ({
-                key: classValue,
-                label: classValue
-              }))
-            ];
+            // 从视频数据中提取唯一的影视类型
+            if (videos.length > 0) {
+              // 提取所有class值
+              const classValues = videos
+                .filter((video: SearchResult) => video.class)
+                .map((video: SearchResult) => video.class as string)
+                .filter((value: string, index: number, self: string[]) => self.indexOf(value) === index);
             
-            setVideoTypes(types);
+              // 构建类型列表（包含热门 + 所有唯一class值）
+              const types = [
+                { key: '热门', label: '热门' },
+                ...classValues.map((classValue: string) => ({
+                  key: classValue,
+                  label: classValue
+                }))
+              ];
+              
+              setVideoTypes(types);
+            }
           }
-        }
       } catch (error) {
         console.error('获取视频列表失败:', error);
       } finally {
